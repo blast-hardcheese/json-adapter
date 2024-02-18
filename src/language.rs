@@ -31,7 +31,7 @@ impl TranslateContext {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Language {
     At(String),                            // .foo
-    Array(Box<Language>),                  // map( ... )
+    Map(Box<Language>),                    // map( ... )
     Object(Vec<(String, Language)>),       // { foo: .foo, bar: .bar  }
     List(Vec<Language>),                   // [ .foo, .bar, .baz ]
     Splat(Vec<Language>),                  // .foo, .bar
@@ -49,8 +49,8 @@ pub enum Language {
 }
 
 impl Language {
-    pub fn array(arr: Language) -> Language {
-        Language::Array(Box::new(arr))
+    pub fn map(arr: Language) -> Language {
+        Language::Map(Box::new(arr))
     }
     pub fn at(key: &str) -> Language {
         Language::At(String::from(key))
@@ -126,7 +126,7 @@ pub fn step(
                     .map(|o| Value::Array(o.keys().map(|x| Value::String(x.to_owned())).collect())),
             })?
             .clone()),
-        Language::Array(next) => Ok(Value::Array(
+        Language::Map(next) => Ok(Value::Array(
             current
                 .as_array()
                 .ok_or_else(|| StepError::new(String::from("<Not an array>")))?

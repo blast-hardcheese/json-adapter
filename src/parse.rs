@@ -159,7 +159,7 @@ fn parse_map(input: &str) -> IResult<&str, Language> {
         tag("map("),
         delimited(
             space0,
-            Parser::map(Parser::map(parse_thunk, Box::new), Language::Array),
+            Parser::map(Parser::map(parse_thunk, Box::new), Language::Map),
             space0,
         ),
         char(')'),
