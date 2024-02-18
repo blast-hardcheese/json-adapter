@@ -220,7 +220,7 @@ fn parse_thunk(input: &str) -> IResult<&str, Language> {
     let (input, next) = opt(preceded(delimited(space0, char('|'), space0), parse_thunk))(input)?;
 
     let result = if let Some(proj) = next {
-        thunk.map(proj)
+        thunk.and_then(proj)
     } else {
         thunk
     };

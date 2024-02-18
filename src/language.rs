@@ -30,22 +30,22 @@ impl TranslateContext {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Language {
-    At(String),                        // .foo
-    Array(Box<Language>),              // map( ... )
-    Object(Vec<(String, Language)>),   // { foo: .foo, bar: .bar  }
-    List(Vec<Language>),               // [ .foo, .bar, .baz ]
-    Splat(Vec<Language>),              // .foo, .bar
-    Set(String),                       // ... | set("foo")
-    Get(String),                       // get("bar") | ...
-    Const(Value),                      // const(...)
-    Identity,                          // .
-    Map(Box<Language>, Box<Language>), // ... | ...
-    Length,                            // [...] | length
-    Join(String),                      // [...] | join(",")
-    Default(Box<Language>),            // ... | default(<lang>)
-    Flatten,                           // ... | flatten | ...
-    ToString,                          // ... | tostring | ...
-    EmitEvent(String),                 // ... | emit("topic")
+    At(String),                            // .foo
+    Array(Box<Language>),                  // map( ... )
+    Object(Vec<(String, Language)>),       // { foo: .foo, bar: .bar  }
+    List(Vec<Language>),                   // [ .foo, .bar, .baz ]
+    Splat(Vec<Language>),                  // .foo, .bar
+    Set(String),                           // ... | set("foo")
+    Get(String),                           // get("bar") | ...
+    Const(Value),                          // const(...)
+    Identity,                              // .
+    AndThen(Box<Language>, Box<Language>), // ... | ...
+    Length,                                // [...] | length
+    Join(String),                          // [...] | join(",")
+    Default(Box<Language>),                // ... | default(<lang>)
+    Flatten,                               // ... | flatten | ...
+    ToString,                              // ... | tostring | ...
+    EmitEvent(String),                     // ... | emit("topic")
 }
 
 impl Language {
@@ -61,8 +61,8 @@ impl Language {
     pub fn get(key: &str) -> Language {
         Language::Get(String::from(key))
     }
-    pub fn map(&self, next: Language) -> Language {
-        Language::Map(Box::new(self.clone()), Box::new(next))
+    pub fn and_then(&self, next: Language) -> Language {
+        Language::AndThen(Box::new(self.clone()), Box::new(next))
     }
     pub fn set(key: &str) -> Language {
         Language::Set(String::from(key))
@@ -184,7 +184,7 @@ pub fn step(
             // }
             Ok(current.clone())
         }
-        Language::Map(first, second) => {
+        Language::AndThen(first, second) => {
             let intermediate = step(ctx, first, current, state.clone())?;
             step(ctx, second, &intermediate, state)
         }
@@ -287,7 +287,7 @@ fn translate_error_array() {
 fn translate_error_focus() {
     let ctx = TranslateContext::noop();
     use serde_json::json;
-    let prog = Language::at("foo").map(Language::at("bar"));
+    let prog = Language::at("foo").and_then(Language::at("bar"));
 
     let given = json!({ "baz": "blix" });
     if let Some(StepError {
@@ -322,7 +322,7 @@ fn translate_error_object() {
 fn translate_test() {
     let ctx = TranslateContext::noop();
     use serde_json::json;
-    let prog = Language::at("results").map(Language::Object(vec![(
+    let prog = Language::at("results").and_then(Language::Object(vec![(
         String::from("ids"),
         Language::array(Language::at("product_variant_id")),
     )]));
